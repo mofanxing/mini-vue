@@ -13,7 +13,8 @@
     <script>
         const { reactive, effect } = Vue
         const p = reactive({
-            name: '张三'
+            name: '张三',
+            age: 19
         })
         effect(() => {
             document.querySelector('#app').innerText = p.name
