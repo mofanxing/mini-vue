@@ -1,6 +1,20 @@
 var Vue = (function (exports) {
     'use strict';
 
+    var isObject = function (value) {
+        return value !== null && typeof value === 'object';
+    };
+    /**
+     * 判断是否为一个数组
+     */
+    var isArray = Array.isArray;
+    /**
+     * 对比两个数据是否发生了改变
+     */
+    var hasChanged = function (value, oldValue) {
+        return !Object.is(value, oldValue);
+    };
+
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
@@ -59,11 +73,6 @@ var Vue = (function (exports) {
         var e = new Error(message);
         return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
-
-    /**
-     * 判断是否为一个数组
-     */
-    var isArray = Array.isArray;
 
     /**
      * 依据 effects 生成 dep 实例
@@ -183,9 +192,85 @@ var Vue = (function (exports) {
         proxyMap.set(target, proxy);
         return proxy;
     }
+    /**
+     * 将指定数据变为 reactive 数据
+     */
+    var toReactive = function (value) {
+        return isObject(value) ? reactive(value) : value;
+    };
+
+    function ref(value) {
+        return createRef(value, false);
+    }
+    function createRef(rawValue, shallow) {
+        if (isRef(rawValue)) {
+            return rawValue;
+        }
+        return new RefImpl(rawValue, shallow);
+    }
+    var RefImpl = /** @class */ (function () {
+        function RefImpl(value, __v_isShallow) {
+            this.__v_isShallow = __v_isShallow;
+            this.dep = undefined;
+            // 是否为 ref 类型数据的标记
+            this.__v_isRef = true;
+            // 如果 __v_isShallow 为 true，则 value 不会被转化为 reactive 数据，即如果当前 value 为复杂数据类型，则会失去响应性。对应官方文档 shallowRef ：https://cn.vuejs.org/api/reactivity-advanced.html#shallowref
+            this._value = __v_isShallow ? value : toReactive(value);
+            // 原始数据
+            this._rawValue = value;
+        }
+        Object.defineProperty(RefImpl.prototype, "value", {
+            get: function () {
+                // 收集依赖
+                trackRefValue(this);
+                return this._value;
+            },
+            set: function (newVal) {
+                /**
+                 * newVal 为新数据
+                 * this._rawValue 为旧数据（原始数据）
+                 * 对比两个数据是否发生了变化
+                 */
+                if (hasChanged(newVal, this._rawValue)) {
+                    // 更新原始数据
+                    this._rawValue = newVal;
+                    // 更新 .value 的值
+                    this._value = toReactive(newVal);
+                    // 触发依赖
+                    triggerRefValue(this);
+                }
+            },
+            enumerable: false,
+            configurable: true
+        });
+        return RefImpl;
+    }());
+    /**
+     * 为 ref 的 value 进行依赖收集工作
+     */
+    function trackRefValue(ref) {
+        if (activeEffect) {
+            trackEffects(ref.dep || (ref.dep = createDep()));
+        }
+    }
+    /**
+     * 为 ref 的 value 进行触发依赖工作
+     */
+    function triggerRefValue(ref) {
+        if (ref.dep) {
+            triggerEffects(ref.dep);
+        }
+    }
+    /**
+     * 指定数据是否为 RefImpl 类型
+     */
+    function isRef(r) {
+        return !!(r && r.__v_isRef === true);
+    }
 
     exports.effect = effect;
     exports.reactive = reactive;
+    exports.ref = ref;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
