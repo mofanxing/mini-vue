@@ -14,19 +14,20 @@
     </div>
     <script src="../dist/vue.js"></script>
     <script>
-        const { reactive, effect } = Vue
-        const p = reactive({
+        const { ref, effect } = Vue
+        const p = ref({
             name: '张三',
             age: 19
         })
+       
         effect(() => {
-            document.querySelector('#app .p1').innerText = p.name
+            document.querySelector('#app .p1').innerText = p.value.name
         })
         effect(() => {
-            document.querySelector('#app .p2').innerText = p.name
+            document.querySelector('#app .p2').innerText = p.value.name
         })
         setTimeout(() => {
-            p.name = '李四'
+            p.value.name = '李四'
         }, 2000);
     </script>
 
