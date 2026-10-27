@@ -14,21 +14,24 @@
     </div>
     <script src="../dist/vue.js"></script>
     <script>
-        const { ref, effect } = Vue
-        const p = ref({
-            name: '张三',
-            age: 19
+        const { ref, effect, computed } = Vue
+        const p = ref('张三')
+       const p2 = computed(() => {
+            return p.value
         })
-       
+        console.log(p2)
         effect(() => {
-            document.querySelector('#app .p1').innerText = p.value.name
+            document.querySelector('.p1').innerText = p2.value
         })
-        effect(() => {
-            document.querySelector('#app .p2').innerText = p.value.name
-        })
-        setTimeout(() => {
-            p.value.name = '李四'
-        }, 2000);
+        // effect(() => {
+        //     document.querySelector('#app .p1').innerText = p.value
+        // })
+        // effect(() => {
+        //     document.querySelector('#app .p2').innerText = p.value
+        // })
+        // setTimeout(() => {
+        //     p.value = '李四'
+        // }, 2000);
     </script>
 
 </body>

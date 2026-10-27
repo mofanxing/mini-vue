@@ -1,5 +1,6 @@
 import { isArray } from '@vue/shared'
 import { createDep, Dep } from './dep'
+import { ComputedRefImpl } from './computed'
 /**
  * 当前的 effect
  */
@@ -15,6 +16,10 @@ export function effect<T = any>(fn: () => T) {
 }
 
 export class ReactiveEffect<T = any> {
+    /**
+   * 存在该属性，则表示当前的 effect 为计算属性的 effect
+   */
+    computed?: ComputedRefImpl<T>
   constructor(public fn: () => T) {}
   run() {
     activeEffect = this

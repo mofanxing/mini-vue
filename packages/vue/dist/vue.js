@@ -14,6 +14,12 @@ var Vue = (function (exports) {
     var hasChanged = function (value, oldValue) {
         return !Object.is(value, oldValue);
     };
+    /**
+     * 是否为一个 function
+     */
+    var isFunction = function (val) {
+        return typeof val === 'function';
+    };
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -268,6 +274,42 @@ var Vue = (function (exports) {
         return !!(r && r.__v_isRef === true);
     }
 
+    var ComputedRefImpl = /** @class */ (function () {
+        function ComputedRefImpl(getter) {
+            this.dep = undefined;
+            this.__v_isRef = true;
+            this.effect = new ReactiveEffect(getter);
+            this.effect.computed = this;
+        }
+        Object.defineProperty(ComputedRefImpl.prototype, "value", {
+            get: function () {
+                // 收集依赖
+                trackRefValue(this);
+                this._value = this.effect.run();
+                console.log('value', this._value);
+                return this._value;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        return ComputedRefImpl;
+    }());
+    /**
+     * 计算属性
+     */
+    function computed(getterOrOptions) {
+        var getter;
+        // 判断传入的参数是否为一个函数
+        var onlyGetter = isFunction(getterOrOptions);
+        if (onlyGetter) {
+            // 如果是函数，则赋值给 getter
+            getter = getterOrOptions;
+        }
+        var cRef = new ComputedRefImpl(getter);
+        return cRef;
+    }
+
+    exports.computed = computed;
     exports.effect = effect;
     exports.reactive = reactive;
     exports.ref = ref;
